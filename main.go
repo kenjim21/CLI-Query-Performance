@@ -1,7 +1,7 @@
 package main
 
-import "github.com/kenjim21/CLI-query-performance/benchmark"
+import "github.com/kenjim21/CLI-query-performance/cmd"
 
 func main() {
-	benchmark.Execute()
+	cmd.Execute()
 }
