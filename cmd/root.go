@@ -10,6 +10,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -24,30 +25,27 @@ var rootCmd = &cobra.Command{
 	Long:  "given a csv file or standard input and number of workers, find various benchmarking values",
 	Args: func(cmd *cobra.Command, args []string) error {
 		// checks at least 1 arg
-		if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
+		if err := cobra.ExactArgs(1)(cmd, args); err != nil {
 			return err
 		}
-		// checks if 1 arg that it is a valid csv file
+		// checks if a valid csv file
 		// will leave checking presence of csv file to run
-		if len(args) == 1 {
-			if _, err := regexp.MatchString("^[\\w,\\s-]+\\.csv$", args[0]); err != nil {
-				return err
-			}
-			return nil
-		}
-		// LOOK BACK AT WHEN TESTING INPUTS
-
-		// if multiple args, will check that first line follows proper csv format of
-		// hostname,start_time,end_time
-		if _, err := regexp.MatchString("hostname,start_time,end_time", args[0]); err != nil {
+		if _, err := regexp.MatchString("^[\\w,\\s-]+\\.csv$", args[0]); err != nil {
 			return err
 		}
-		return fmt.Errorf("invalid input")
+
+		// check if contains at least csv header line of
+		// hostname,start_time,end_time
+		if _, err := regexp.MatchString("^hostname,start_time,end_time(.|\n)*$", args[0]); err != nil {
+			return err
+		}
+
+		return nil
 	},
-	//TODO STILL WORKING ON
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// create TimescaleDB connection pool
 		connStr := os.Getenv("DATABASE_CONNECTION_STRING")
+		fmt.Print(connStr)
 		ctx := context.Background()
 		dbpool, err := pgxpool.New(ctx, connStr)
 		if err != nil {
@@ -69,7 +67,7 @@ var rootCmd = &cobra.Command{
 
 		// initalize tools for maintaining each worker takes on queries for the same hostname
 		m := make(map[string]int)
-		next := 1
+		next := 1 % numWork
 
 		// begin collecting values
 		var results_wg sync.WaitGroup
@@ -78,6 +76,7 @@ var rootCmd = &cobra.Command{
 
 		// first determine if reading csv or csv data stream
 		isFile, _ := regexp.MatchString("^[\\w,\\s-]+\\.csv$", args[0])
+		var reader *csv.Reader
 
 		// based on how data is passed in, prepare and run as needed
 		// if csv file was passed in, attempt to open and access
@@ -90,7 +89,7 @@ var rootCmd = &cobra.Command{
 
 			defer file.Close()
 
-			reader := csv.NewReader(file)
+			reader = csv.NewReader(file)
 
 			// check csv file is proper format
 			line, err := reader.Read()
@@ -101,34 +100,36 @@ var rootCmd = &cobra.Command{
 			if line[0] != "hostname" || line[1] != "start_time" || line[2] != "end_time" {
 				return fmt.Errorf("csv headers do not match required: %q, %q, %q", line[0], line[1], line[2])
 			}
-
-			// begin processing
-			// keep reading from file until hitting EOF or error
-			for {
-
-				line, err := reader.Read()
-				if err == io.EOF {
-					break
-				}
-				if err != nil {
-					return fmt.Errorf("error while reading file: %v", err)
-				}
-
-				// check if host has been queried before
-				// if not, send to next worker
-				check := m[line[0]] - 1
-				if check == -1 {
-					m[line[0]] = next
-					ch[next] <- line
-					next = (next + 1) % numWork
-				} else {
-					ch[check] <- line
-				}
-
-			}
-
 		} else {
 			// otherwise, read csv formatted data stream from args TODO
+			reader = csv.NewReader(strings.NewReader(args[0]))
+			reader.Read()
+			//discard first line of headers as already checked
+		}
+
+		// begin processing
+		// keep reading from file until hitting EOF or error
+		for {
+
+			line, err := reader.Read()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return fmt.Errorf("error while reading file: %v", err)
+			}
+
+			// check if host has been queried before
+			// if not, send to next worker
+			check := m[line[0]] - 1
+			if check == -1 {
+				m[line[0]] = next
+				ch[next] <- line
+				next = (next + 1) % numWork
+			} else {
+				ch[check] <- line
+			}
+
 		}
 
 		for i := range ch {
@@ -142,24 +143,20 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-// TODO
 func worker(job chan []string, out chan float64, wg *sync.WaitGroup, dbpool *pgxpool.Pool) {
 	defer wg.Done()
 	for work := range job {
 		// run each query and record time taken
-		start := time.Now()
 		var min float64
 		var max float64
+		start := time.Now()
 		err := dbpool.QueryRow(context.Background(), "SELECT MIN(usage) min, MAX(usage) max FROM cpu_usage WHERE host = $1 AND ts BETWEEN $2 AND $3", work[0], work[1], work[2]).Scan(&min, &max)
+		stop := time.Now()
 		if err != nil {
 			log.Fatal("error while iterating dataset: ", err)
 		}
 		//note for now actual result of query not important
-
-		stop := time.Now()
 		elapsed := stop.Sub(start)
-		fmt.Printf("min: %f, max: %f", min, max)
-		fmt.Print("\n")
 		out <- elapsed.Seconds()
 	}
 }
