@@ -1,0 +1,19 @@
+services:
+  timescaledb:
+    container_name: timescaledb
+    image: 'timescale/timescaledb-ha:pg16'
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db_setup/:/docker-entrypoint-initdb.d
+  cli-tool:
+    container_name: cli-tool
+    build: ./
+    tty: True
+    depends_on:
+      - timescaledb
+    environment:
+      DATABASE_CONNECTION_STRING: postgres://postgres:password@timescaledb:5432/homework
