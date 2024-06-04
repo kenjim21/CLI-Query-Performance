@@ -42,7 +42,7 @@ var rootCmd = &cobra.Command{
 			return err
 		}
 
-		if !matchCSV || !matchARG {
+		if !(matchCSV || matchARG) {
 			return fmt.Errorf("args does not match either csv file or required csv-formatted input")
 		}
 
