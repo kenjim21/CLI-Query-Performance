@@ -13,7 +13,7 @@ Ensure that the database is finished initalizing before attempting to run anythi
 
 # Execution
 
-For ease, the command line tool container is set to stay up run, thus to test the program, the format of the command will be
+For ease, the command line tool container is set to stay up running, thus to test the program, the format of the command will be
 
     docker exec -it cli-tool CLI-query-performance --workers=$numberOfWorkers $sourceOfCSVData
 
