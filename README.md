@@ -7,9 +7,7 @@ Important to note regarding specific implementations: This project was created i
 
 Once you have cloned the repository, first ensure you have the necessary applications installed (docker, docker compose). Then run the following
 
-'''
-docker compose up -d
-'''
+    docker compose up -d
 
 Ensure that the database is finished initalizing before attempting to run anything.
 
@@ -17,18 +15,18 @@ Ensure that the database is finished initalizing before attempting to run anythi
 
 For ease, the command line tool container is set to stay up run, thus to test the program, the format of the command will be
 
-'''
     docker exec -it cli-tool CLI-query-performance --workers=$numberOfWorkers $sourceOfCSVData
-'''
 
 where:
     - numberOfWorkers = number of workers you'd like the tool to use while running the queries
     - sourceOfCSVData = either a csv-formatted file or string in csv-format
 
 Examples:
-'''
-docker exec -it cli-tool CLI-query-performance --workers=5 query_params.csv
-'''
-'''
-docker exec -it cli-tool CLI-query-performance --workers=3 hostname,start_time,end_time\nhost_000008,2017-01-01 08:59:22,2017-01-01 09:59:22\nhost_000001,2017-01-02 13:02:02,2017-01-02 14:02:02\nhost_000008,2017-01-02 18:50:28,2017-01-02 19:50:28
-'''
+
+Using csv file
+
+    docker exec -it cli-tool CLI-query-performance --workers=5 query_params.csv
+
+Using string
+
+    docker exec -it cli-tool CLI-query-performance --workers=3 hostname,start_time,end_time\nhost_000008,2017-01-01 08:59:22,2017-01-01 09:59:22\nhost_000001,2017-01-02 13:02:02,2017-01-02 14:02:02\nhost_000008,2017-01-02 18:50:28,2017-01-02 19:50:28
