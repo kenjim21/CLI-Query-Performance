@@ -1,7 +1,7 @@
 # CLI-Query-Performance
 Command line tool for benchmarking query performance across multiple workers against a TimescaleDB instance.
 
-Important to note regarding specific implementations: This project was created in a way to be as easy as possible to run and test. As such, certain security decision were made. If a similar deployment is ever used, ensure to create a .env file to hold necessary secrets and parameterize necessary docker and compose files to utilize. The database is also initialized to contain test data so take care to edit the compose file if that is not desired.
+Important to note regarding specific implementations: This project was created in a way to be as easy as possible to run and test. As such, certain security decisions were made. If a similar deployment is ever used, ensure to create a .env file to hold necessary secrets and parameterize necessary docker and compose files to utilize. The database is also initialized to contain test data so take care to edit the compose file if that is not desired.
 
 # Setup
 
