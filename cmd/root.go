@@ -30,14 +30,20 @@ var rootCmd = &cobra.Command{
 		}
 		// checks if a valid csv file
 		// will leave checking presence of csv file to run
-		if _, err := regexp.MatchString("^[\\w,\\s-]+\\.csv$", args[0]); err != nil {
+		matchCSV, err := regexp.MatchString("^[\\w,\\s-]+\\.csv$", args[0])
+		if err != nil {
 			return err
 		}
 
 		// check if contains at least csv header line of
 		// hostname,start_time,end_time
-		if _, err := regexp.MatchString("^hostname,start_time,end_time(.|\n)*$", args[0]); err != nil {
+		matchARG, err := regexp.MatchString("^hostname,start_time,end_time(.|\n)*$", args[0])
+		if err != nil {
 			return err
+		}
+
+		if !matchCSV || !matchARG {
+			return fmt.Errorf("args does not match either csv file or required csv-formatted input")
 		}
 
 		return nil
