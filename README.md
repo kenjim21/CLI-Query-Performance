@@ -43,3 +43,5 @@ Using string
     host_000005,2017-01-02 11:29:42,2017-01-02 12:29:42
     host_000006,2017-01-02 01:18:53,2017-01-02 02:18:53
     host_000000,2017-01-02 15:44:45,2017-01-02 16:44:45"
+
+Note: csv-format must follow (hostname,start_time,end_time). To see more details about the database format, check db_setup\100_cpu_usage.sql.
