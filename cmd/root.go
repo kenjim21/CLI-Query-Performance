@@ -45,7 +45,6 @@ var rootCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// create TimescaleDB connection pool
 		connStr := os.Getenv("DATABASE_CONNECTION_STRING")
-		fmt.Print(connStr)
 		ctx := context.Background()
 		dbpool, err := pgxpool.New(ctx, connStr)
 		if err != nil {
